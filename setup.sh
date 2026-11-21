@@ -29,13 +29,14 @@ if [[ -z "$plugin_gradle" ]]; then
   exit 1
 fi
 
-# Patch legacy Android/Kotlin settings required by the current Gradle toolchain.
+# Patch legacy settings required by the current Android Gradle toolchain.
 if ! grep -q '^[[:space:]]*namespace[[:space:]]' "$plugin_gradle"; then
   sed -i '/^android[[:space:]]*{/a\    namespace "com.lucasjosino.on_audio_query"' "$plugin_gradle"
 fi
 if ! grep -q 'jvmTarget' "$plugin_gradle"; then
   sed -i '/^android[[:space:]]*{/a\    kotlinOptions { jvmTarget = "11" }' "$plugin_gradle"
 fi
+sed -i 's/compileSdkVersion 33/compileSdkVersion 34/' "$plugin_gradle"
 
 flutter build apk --release
 echo "APK listo: app/build/app/outputs/flutter-apk/app-release.apk"

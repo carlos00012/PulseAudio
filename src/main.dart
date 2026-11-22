@@ -51,6 +51,10 @@ Future<void> main() async {
       androidNotificationOngoing: true);
   prefs = await SharedPreferences.getInstance();
   favs.value = (prefs.getStringList('favs') ?? []).toSet();
+  final minDurationSeconds = prefs.getInt('minDurationSeconds');
+  if (minDurationSeconds == null) {
+    await prefs.setInt('minDurationSeconds', 30);
+  }
   final raw = prefs.getString('lists');
   if (raw != null) {
     lists.value = (jsonDecode(raw) as Map)
@@ -77,6 +81,8 @@ class _HomeState extends State<Home> {
   List<SongModel> songs = [];
   bool loading = true, denied = false;
   String q = '';
+  String? selectedFolder;
+  int minDurationSeconds = 30;
 
   @override
   void initState() {
@@ -85,6 +91,9 @@ class _HomeState extends State<Home> {
   }
 
   Future<void> _init() async {
+    final savedFolder = prefs.getString('selectedFolder');
+    selectedFolder = savedFolder == null || savedFolder.isEmpty ? null : savedFolder;
+    minDurationSeconds = prefs.getInt('minDurationSeconds') ?? 30;
     var ok = await query.permissionsStatus();
     if (!ok) ok = await query.permissionsRequest();
     if (ok) {
@@ -94,15 +103,96 @@ class _HomeState extends State<Home> {
           uriType: UriType.EXTERNAL,
           ignoreCase: true);
       songs = all.where((s) => s.isMusic == true && s.uri != null).toList();
+      if (selectedFolder != null &&
+          !songs.any((s) => _songFolder(s) == selectedFolder)) {
+        selectedFolder = null;
+        await prefs.remove('selectedFolder');
+      }
     }
     if (mounted) setState(() { loading = false; denied = !ok; });
   }
 
+  List<SongModel> _visibleSongs() => songs.where((s) {
+        final matchesSearch =
+            q.isEmpty || '${s.title} ${s.artist} ${s.album}'.toLowerCase().contains(q);
+        final matchesFolder =
+            selectedFolder == null || _songFolder(s) == selectedFolder;
+        final matchesDuration = (s.duration ?? 0) >= minDurationSeconds * 1000;
+        return matchesSearch && matchesFolder && matchesDuration;
+      }).toList();
+
+  Future<void> _showFilters() async {
+    final folders = songs.map(_songFolder).toSet().toList()..sort();
+    var folder = selectedFolder;
+    var duration = minDurationSeconds;
+    final result = await showDialog<(String?, int)>(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('Filtros de biblioteca'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Carpeta'),
+              DropdownButton<String?>(
+                isExpanded: true,
+                value: folder,
+                items: [
+                  const DropdownMenuItem<String?>(
+                      value: null, child: Text('Todas las carpetas')),
+                  for (final path in folders)
+                    DropdownMenuItem<String?>(
+                      value: path,
+                      child: Text(path, overflow: TextOverflow.ellipsis),
+                    ),
+                ],
+                onChanged: (value) => setDialogState(() => folder = value),
+              ),
+              const SizedBox(height: 16),
+              const Text('Duración mínima'),
+              DropdownButton<int>(
+                isExpanded: true,
+                value: duration,
+                items: const [
+                  DropdownMenuItem(value: 0, child: Text('Sin mínimo')),
+                  DropdownMenuItem(value: 30, child: Text('30 segundos')),
+                  DropdownMenuItem(value: 60, child: Text('1 minuto')),
+                  DropdownMenuItem(value: 120, child: Text('2 minutos')),
+                  DropdownMenuItem(value: 300, child: Text('5 minutos')),
+                ],
+                onChanged: (value) {
+                  if (value != null) setDialogState(() => duration = value);
+                },
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancelar'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, (folder, duration)),
+              child: const Text('Aplicar'),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (result == null || !mounted) return;
+    setState(() {
+      selectedFolder = result.$1;
+      minDurationSeconds = result.$2;
+    });
+    await prefs.setString('selectedFolder', result.$1 ?? '');
+    await prefs.setInt('minDurationSeconds', result.$2);
+  }
+
   @override
   Widget build(BuildContext context) {
-    final f = q.isEmpty
-        ? songs
-        : songs.where((s) => '${s.title} ${s.artist} ${s.album}'.toLowerCase().contains(q)).toList();
+    final f = _visibleSongs();
+    final filtersActive = selectedFolder != null || minDurationSeconds > 0;
     return DefaultTabController(
       length: 6,
       child: Scaffold(
@@ -114,6 +204,16 @@ class _HomeState extends State<Home> {
                 prefixIcon: const Icon(Icons.search), isDense: true,
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(24), borderSide: BorderSide.none)),
           ),
+          actions: [
+            IconButton(
+              tooltip: 'Filtrar carpeta y duración',
+              onPressed: _showFilters,
+              icon: Icon(
+                filtersActive ? Icons.filter_alt : Icons.filter_alt_outlined,
+                color: filtersActive ? accent : null,
+              ),
+            ),
+          ],
           bottom: const TabBar(isScrollable: true, indicatorColor: accent, tabs: [
             Tab(text: 'Canciones'), Tab(text: 'Listas'), Tab(text: 'Artistas'),
             Tab(text: 'Álbumes'), Tab(text: 'Carpetas'), Tab(text: 'Favoritos')]),
@@ -143,6 +243,12 @@ class _HomeState extends State<Home> {
       ),
     );
   }
+}
+
+String _songFolder(SongModel song) {
+  final path = song.data.replaceAll('\\', '/');
+  final separator = path.lastIndexOf('/');
+  return separator <= 0 ? 'Desconocida' : path.substring(0, separator);
 }
 
 Widget art(int id, double size) => QueryArtworkWidget(

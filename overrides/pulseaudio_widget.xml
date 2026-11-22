@@ -3,48 +3,130 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#CC202020"
-    android:gravity="center_vertical"
-    android:orientation="horizontal"
-    android:padding="8dp">
+    android:orientation="vertical"
+    android:padding="10dp">
 
-    <TextView
-        android:id="@+id/widget_app"
-        android:layout_width="0dp"
-        android:layout_height="match_parent"
-        android:layout_weight="1"
-        android:contentDescription="Abrir PulseAudio"
+    <LinearLayout
+        android:id="@+id/widget_header"
+        android:layout_width="match_parent"
+        android:layout_height="64dp"
         android:gravity="center_vertical"
-        android:maxLines="2"
-        android:paddingStart="4dp"
-        android:text="PulseAudio"
-        android:textColor="#FFFFFFFF"
-        android:textSize="16sp"
-        android:textStyle="bold" />
+        android:orientation="horizontal">
 
-    <ImageButton
-        android:id="@+id/widget_previous"
-        android:layout_width="44dp"
-        android:layout_height="match_parent"
-        android:background="?android:attr/selectableItemBackgroundBorderless"
-        android:contentDescription="Anterior"
-        android:src="@android:drawable/ic_media_previous"
-        android:tint="#FFFFFFFF" />
+        <ImageView
+            android:id="@+id/widget_artwork"
+            android:layout_width="64dp"
+            android:layout_height="64dp"
+            android:contentDescription="Portada de la canción"
+            android:scaleType="centerCrop"
+            android:src="@drawable/widget_music_note" />
 
-    <ImageButton
-        android:id="@+id/widget_play_pause"
-        android:layout_width="48dp"
-        android:layout_height="match_parent"
-        android:background="?android:attr/selectableItemBackgroundBorderless"
-        android:contentDescription="Reproducir o pausar"
-        android:src="@android:drawable/ic_media_play"
-        android:tint="#FFFFFFFF" />
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_marginStart="10dp"
+            android:layout_weight="1"
+            android:gravity="center_vertical"
+            android:orientation="vertical">
 
-    <ImageButton
-        android:id="@+id/widget_next"
-        android:layout_width="44dp"
-        android:layout_height="match_parent"
-        android:background="?android:attr/selectableItemBackgroundBorderless"
-        android:contentDescription="Siguiente"
-        android:src="@android:drawable/ic_media_next"
-        android:tint="#FFFFFFFF" />
+            <TextView
+                android:id="@+id/widget_title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:contentDescription="Canción"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:text="PulseAudio"
+                android:textColor="#FFFFFFFF"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/widget_artist"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:text="Selecciona una canción"
+                android:textColor="#FFBDBDBD"
+                android:textSize="13sp" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/widget_timing"
+        android:layout_width="match_parent"
+        android:layout_height="24dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:visibility="gone">
+
+        <Chronometer
+            android:id="@+id/widget_elapsed"
+            android:layout_width="46dp"
+            android:layout_height="wrap_content"
+            android:textColor="#FFFFFFFF"
+            android:textSize="11sp" />
+
+        <ProgressBar
+            android:id="@+id/widget_progress"
+            style="@android:style/Widget.ProgressBar.Horizontal"
+            android:layout_width="0dp"
+            android:layout_height="3dp"
+            android:layout_weight="1"
+            android:progressTint="#FF1DB954"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/widget_duration"
+            android:layout_width="46dp"
+            android:layout_height="wrap_content"
+            android:gravity="end"
+            android:text="0:00"
+            android:textColor="#FFFFFFFF"
+            android:textSize="11sp" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/widget_controls"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:gravity="center"
+        android:orientation="horizontal">
+
+        <ImageButton
+            android:id="@+id/widget_shuffle"
+            android:layout_width="44dp"
+            android:layout_height="match_parent"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Alternar reproducción aleatoria"
+            android:src="@drawable/widget_shuffle" />
+
+        <ImageButton
+            android:id="@+id/widget_previous"
+            android:layout_width="48dp"
+            android:layout_height="match_parent"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Canción anterior"
+            android:src="@android:drawable/ic_media_previous"
+            android:tint="#FFFFFFFF" />
+
+        <ImageButton
+            android:id="@+id/widget_play_pause"
+            android:layout_width="52dp"
+            android:layout_height="match_parent"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Reproducir o pausar"
+            android:src="@android:drawable/ic_media_play"
+            android:tint="#FFFFFFFF" />
+
+        <ImageButton
+            android:id="@+id/widget_next"
+            android:layout_width="48dp"
+            android:layout_height="match_parent"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Siguiente canción"
+            android:src="@android:drawable/ic_media_next"
+            android:tint="#FFFFFFFF" />
+    </LinearLayout>
 </LinearLayout>

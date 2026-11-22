@@ -6,11 +6,13 @@ cp src/pubspec.yaml app/pubspec.yaml
 cp src/main.dart app/lib/main.dart
 rm -rf app/test
 cp overrides/AndroidManifest.xml app/android/app/src/main/AndroidManifest.xml
-mkdir -p app/android/app/src/main/kotlin/com/pulse/pulseaudio app/android/app/src/main/res/layout app/android/app/src/main/res/xml
+mkdir -p app/android/app/src/main/kotlin/com/pulse/pulseaudio app/android/app/src/main/res/layout app/android/app/src/main/res/xml app/android/app/src/main/res/drawable
 cp overrides/MainActivity.kt app/android/app/src/main/kotlin/com/pulse/pulseaudio/MainActivity.kt
 cp overrides/PulseAudioWidgetProvider.kt app/android/app/src/main/kotlin/com/pulse/pulseaudio/PulseAudioWidgetProvider.kt
 cp overrides/pulseaudio_widget.xml app/android/app/src/main/res/layout/pulseaudio_widget.xml
 cp overrides/pulseaudio_widget_info.xml app/android/app/src/main/res/xml/pulseaudio_widget_info.xml
+cp overrides/widget_music_note.xml app/android/app/src/main/res/drawable/widget_music_note.xml
+cp overrides/widget_shuffle.xml app/android/app/src/main/res/drawable/widget_shuffle.xml
 cd app
 flutter pub get
 

@@ -1,5 +1,8 @@
+import 'dart:async';
 import 'dart:convert';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:just_audio_background/just_audio_background.dart';
 import 'package:on_audio_query/on_audio_query.dart';
@@ -11,7 +14,11 @@ final query = OnAudioQuery();
 ConcatenatingAudioSource? queueSrc;
 final favs = ValueNotifier<Set<String>>({});
 final lists = ValueNotifier<Map<String, List<String>>>({});
+List<SongModel> librarySongs = [];
+bool _libraryLoaded = false;
 late SharedPreferences prefs;
+const _widgetChannel = MethodChannel('com.pulse.audio/widget');
+final _widgetBridge = _WidgetBridge();
 
 void save() {
   prefs.setStringList('favs', favs.value.toList());
@@ -32,9 +39,15 @@ void setLists(Map<String, List<String>> m) {
 
 AudioSource _src(SongModel s) => AudioSource.uri(Uri.parse(s.uri!),
     tag: MediaItem(id: '${s.id}', title: s.title, artist: s.artist ?? 'Desconocido',
-        album: s.album, duration: Duration(milliseconds: s.duration ?? 0)));
+        album: s.album,
+        duration: Duration(milliseconds: s.duration ?? 0),
+        artUri: s.albumId == null
+            ? null
+            : Uri.parse('content://media/external/audio/albumart/${s.albumId}'),
+        extras: s.albumId == null ? null : {'albumId': s.albumId}));
 
 Future<void> playList(List<SongModel> l, int i) async {
+  await _widgetChannel.invokeMethod<void>('requestNotifications');
   queueSrc = ConcatenatingAudioSource(children: l.map(_src).toList());
   await player.setAudioSource(queueSrc!, initialIndex: i);
   player.play();
@@ -42,6 +55,155 @@ Future<void> playList(List<SongModel> l, int i) async {
 
 String fmt(Duration d) =>
     '${d.inMinutes}:${(d.inSeconds % 60).toString().padLeft(2, '0')}';
+
+class _WidgetBridge {
+  String? _trackId;
+  Uint8List? _artwork;
+  int _lastPositionSecond = -1;
+  bool _updating = false, _updatePending = false;
+  bool _firstUpdate = true;
+  final List<StreamSubscription<dynamic>> _subscriptions = [];
+  final List<String> _pendingCommands = [];
+  Future<void> _commandQueue = Future<void>.value();
+
+  Future<void> start() async {
+    _widgetChannel.setMethodCallHandler((call) async {
+      if (call.method != 'remoteCommand' || call.arguments is! String) {
+        throw MissingPluginException(
+            'Método del widget no reconocido: ${call.method}');
+      }
+      await _enqueueCommand(call.arguments as String);
+    });
+    await _widgetChannel.invokeMethod<void>('widgetReady');
+    _subscriptions.add(player.sequenceStateStream.listen((_) {
+      _lastPositionSecond = -1;
+      _scheduleUpdate();
+    }));
+    _subscriptions.add(player.playingStream.listen((_) => _scheduleUpdate()));
+    _subscriptions.add(
+        player.shuffleModeEnabledStream.listen((_) => _scheduleUpdate()));
+    _subscriptions.add(player.positionStream.listen((position) {
+      if (position.inSeconds != _lastPositionSecond) {
+        _lastPositionSecond = position.inSeconds;
+        _scheduleUpdate();
+      }
+    }));
+    _scheduleUpdate();
+  }
+
+  void setLibraryReady() {
+    _libraryLoaded = true;
+    for (final command in _pendingCommands) {
+      unawaited(_enqueueCommand(command));
+    }
+    _pendingCommands.clear();
+  }
+
+  Future<void> _enqueueCommand(String command) {
+    _commandQueue = _commandQueue.then((_) => _handleCommand(command));
+    return _commandQueue;
+  }
+
+  Future<void> _handleCommand(String command) async {
+    final hasQueue =
+        player.sequenceState?.currentSource?.tag is MediaItem;
+    if (!hasQueue && !_libraryLoaded) {
+      _pendingCommands.add(command);
+      return;
+    }
+    if (command == 'toggleShuffle') {
+      final enabled = !player.shuffleModeEnabled;
+      await player.setShuffleModeEnabled(enabled);
+      if (enabled) await player.shuffle();
+      return;
+    }
+    if (command == 'togglePlayback' && player.playing) {
+      await player.pause();
+      return;
+    }
+    if (!hasQueue) {
+      if (librarySongs.isEmpty) return;
+      final savedId = prefs.getString('widgetCurrentSongId');
+      final savedIndex =
+          librarySongs.indexWhere((song) => '${song.id}' == savedId);
+      final startIndex = switch (command) {
+        'previous' => savedIndex < 0
+            ? librarySongs.length - 1
+            : (savedIndex - 1 + librarySongs.length) % librarySongs.length,
+        'next' => savedIndex < 0 ? 0 : (savedIndex + 1) % librarySongs.length,
+        _ => savedIndex < 0 ? 0 : savedIndex,
+      };
+      await playList(librarySongs, startIndex);
+      return;
+    }
+    if (command == 'play' || command == 'togglePlayback') {
+      player.play();
+      return;
+    }
+    final sequence = player.sequenceState!.sequence;
+    if (sequence.isEmpty) return;
+    final currentIndex = player.sequenceState?.currentIndex ?? 0;
+    final nextIndex = command == 'next'
+        ? (currentIndex + 1) % sequence.length
+        : (currentIndex - 1 + sequence.length) % sequence.length;
+    await player.seek(Duration.zero, index: nextIndex);
+    player.play();
+  }
+
+  void _scheduleUpdate() {
+    _updatePending = true;
+    if (!_updating) unawaited(_drainUpdates());
+  }
+
+  Future<void> _drainUpdates() async {
+    _updating = true;
+    try {
+      while (_updatePending) {
+        _updatePending = false;
+        await _sendUpdate();
+      }
+    } finally {
+      _updating = false;
+      if (_updatePending) _scheduleUpdate();
+    }
+  }
+
+  Future<void> _sendUpdate() async {
+    final tag = player.sequenceState?.currentSource?.tag;
+    final item = tag is MediaItem ? tag : null;
+    final artworkChanged = _firstUpdate || item?.id != _trackId;
+    if (artworkChanged) {
+      Uint8List? artwork;
+      final id = int.tryParse(item?.id ?? '');
+      if (id != null) {
+        artwork = await query.queryArtwork(
+          id,
+          ArtworkType.AUDIO,
+          format: ArtworkFormat.JPEG,
+          size: 240,
+          quality: 80,
+        );
+      }
+      _trackId = item?.id;
+      _artwork = artwork;
+      _firstUpdate = false;
+      if (item != null) await prefs.setString('widgetCurrentSongId', item.id);
+    }
+    final duration = player.duration ?? item?.duration ?? Duration.zero;
+    await _widgetChannel.invokeMethod<void>('updateWidget', {
+      'hasTrack': item != null,
+      'title': item?.title ?? '',
+      'artist': item?.artist ?? '',
+      'durationMs': duration.inMilliseconds,
+      'positionMs': player.position.inMilliseconds,
+      'playing': player.playing,
+      'shuffle': player.shuffleModeEnabled,
+      'albumId': item?.extras?['albumId'],
+      'artworkChanged': artworkChanged,
+      'artwork': _artwork,
+    });
+  }
+}
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -60,6 +222,7 @@ Future<void> main() async {
     lists.value = (jsonDecode(raw) as Map)
         .map((k, v) => MapEntry(k as String, List<String>.from(v)));
   }
+  await _widgetBridge.start();
   runApp(MaterialApp(
     debugShowCheckedModeBanner: false,
     title: 'PulseAudio',
@@ -109,6 +272,8 @@ class _HomeState extends State<Home> {
         await prefs.remove('selectedFolder');
       }
     }
+    librarySongs = songs;
+    _widgetBridge.setLibraryReady();
     if (mounted) setState(() { loading = false; denied = !ok; });
   }
 

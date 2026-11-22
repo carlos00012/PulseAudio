@@ -69,7 +69,7 @@ class MainActivity : AudioServiceActivity() {
             else -> null
         } ?: return
         PulseAudioWidgetProvider.queueRemoteCommand(command)
-        intent.action = null
+        intent?.action = null
     }
 
     private fun createMediaNotificationChannel() {

@@ -13,6 +13,7 @@ cp overrides/pulseaudio_widget.xml app/android/app/src/main/res/layout/pulseaudi
 cp overrides/pulseaudio_widget_info.xml app/android/app/src/main/res/xml/pulseaudio_widget_info.xml
 cp overrides/widget_music_note.xml app/android/app/src/main/res/drawable/widget_music_note.xml
 cp overrides/widget_shuffle.xml app/android/app/src/main/res/drawable/widget_shuffle.xml
+cp overrides/ic_notification.xml app/android/app/src/main/res/drawable/ic_notification.xml
 cd app
 flutter pub get
 

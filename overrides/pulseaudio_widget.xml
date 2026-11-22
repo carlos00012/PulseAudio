@@ -15,8 +15,8 @@
 
         <ImageView
             android:id="@+id/widget_artwork"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
             android:contentDescription="Portada de la canción"
             android:scaleType="centerCrop"
             android:src="@drawable/widget_music_note" />
@@ -24,7 +24,7 @@
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="match_parent"
-            android:layout_marginStart="6dp"
+            android:layout_marginStart="4dp"
             android:layout_weight="1"
             android:gravity="center_vertical"
             android:orientation="vertical">
@@ -63,7 +63,7 @@
 
         <Chronometer
             android:id="@+id/widget_elapsed"
-            android:layout_width="38dp"
+            android:layout_width="30dp"
             android:layout_height="wrap_content"
             android:textColor="#FFFFFFFF"
             android:textSize="11sp" />
@@ -79,7 +79,7 @@
 
         <TextView
             android:id="@+id/widget_duration"
-            android:layout_width="38dp"
+            android:layout_width="30dp"
             android:layout_height="wrap_content"
             android:gravity="end"
             android:text="0:00"
@@ -96,7 +96,7 @@
 
         <ImageButton
             android:id="@+id/widget_shuffle"
-            android:layout_width="40dp"
+            android:layout_width="34dp"
             android:layout_height="match_parent"
             android:background="?android:attr/selectableItemBackgroundBorderless"
             android:contentDescription="Alternar reproducción aleatoria"
@@ -104,7 +104,7 @@
 
         <ImageButton
             android:id="@+id/widget_previous"
-            android:layout_width="40dp"
+            android:layout_width="36dp"
             android:layout_height="match_parent"
             android:background="?android:attr/selectableItemBackgroundBorderless"
             android:contentDescription="Canción anterior"
@@ -113,7 +113,7 @@
 
         <ImageButton
             android:id="@+id/widget_play_pause"
-            android:layout_width="44dp"
+            android:layout_width="40dp"
             android:layout_height="match_parent"
             android:background="?android:attr/selectableItemBackgroundBorderless"
             android:contentDescription="Reproducir o pausar"
@@ -122,7 +122,7 @@
 
         <ImageButton
             android:id="@+id/widget_next"
-            android:layout_width="40dp"
+            android:layout_width="36dp"
             android:layout_height="match_parent"
             android:background="?android:attr/selectableItemBackgroundBorderless"
             android:contentDescription="Siguiente canción"

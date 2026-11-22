@@ -47,7 +47,6 @@ AudioSource _src(SongModel s) => AudioSource.uri(Uri.parse(s.uri!),
         extras: s.albumId == null ? null : {'albumId': s.albumId}));
 
 Future<void> playList(List<SongModel> l, int i) async {
-  await _widgetChannel.invokeMethod<void>('requestNotifications');
   queueSrc = ConcatenatingAudioSource(children: l.map(_src).toList());
   await player.setAudioSource(queueSrc!, initialIndex: i);
   player.play();
@@ -208,8 +207,10 @@ class _WidgetBridge {
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await JustAudioBackground.init(
-      androidNotificationChannelId: 'com.pulse.audio',
+      androidNotificationChannelId: 'com.pulse.audio.playback.v2',
       androidNotificationChannelName: 'PulseAudio',
+      androidNotificationChannelDescription: 'Controles de reproducción',
+      androidNotificationIcon: 'drawable/ic_notification',
       androidNotificationOngoing: true);
   prefs = await SharedPreferences.getInstance();
   favs.value = (prefs.getStringList('favs') ?? []).toSet();
@@ -243,6 +244,7 @@ class Home extends StatefulWidget {
 class _HomeState extends State<Home> {
   List<SongModel> songs = [];
   bool loading = true, denied = false;
+  bool notificationsEnabled = true;
   String q = '';
   String? selectedFolder;
   int minDurationSeconds = 30;
@@ -272,9 +274,27 @@ class _HomeState extends State<Home> {
         await prefs.remove('selectedFolder');
       }
     }
+    notificationsEnabled =
+        await _widgetChannel.invokeMethod<bool>('requestNotifications') ?? false;
     librarySongs = songs;
     _widgetBridge.setLibraryReady();
     if (mounted) setState(() { loading = false; denied = !ok; });
+    if (mounted && !notificationsEnabled) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text(
+                'Activa las notificaciones de PulseAudio para ver los controles de reproducción y bloqueo.'),
+            action: SnackBarAction(
+              label: 'Ajustes',
+              onPressed: () =>
+                  _widgetChannel.invokeMethod<void>('openNotificationSettings'),
+            ),
+          ),
+        );
+      });
+    }
   }
 
   List<SongModel> _visibleSongs() => songs.where((s) {

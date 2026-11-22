@@ -4,19 +4,19 @@
     android:layout_height="match_parent"
     android:background="#CC202020"
     android:orientation="vertical"
-    android:padding="10dp">
+    android:padding="4dp">
 
     <LinearLayout
         android:id="@+id/widget_header"
         android:layout_width="match_parent"
-        android:layout_height="64dp"
+        android:layout_height="42dp"
         android:gravity="center_vertical"
         android:orientation="horizontal">
 
         <ImageView
             android:id="@+id/widget_artwork"
-            android:layout_width="64dp"
-            android:layout_height="64dp"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
             android:contentDescription="Portada de la canción"
             android:scaleType="centerCrop"
             android:src="@drawable/widget_music_note" />
@@ -24,7 +24,7 @@
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="match_parent"
-            android:layout_marginStart="10dp"
+            android:layout_marginStart="6dp"
             android:layout_weight="1"
             android:gravity="center_vertical"
             android:orientation="vertical">
@@ -38,7 +38,7 @@
                 android:maxLines="1"
                 android:text="PulseAudio"
                 android:textColor="#FFFFFFFF"
-                android:textSize="16sp"
+                android:textSize="14sp"
                 android:textStyle="bold" />
 
             <TextView
@@ -49,21 +49,21 @@
                 android:maxLines="1"
                 android:text="Selecciona una canción"
                 android:textColor="#FFBDBDBD"
-                android:textSize="13sp" />
+                android:textSize="12sp" />
         </LinearLayout>
     </LinearLayout>
 
     <LinearLayout
         android:id="@+id/widget_timing"
         android:layout_width="match_parent"
-        android:layout_height="24dp"
+        android:layout_height="18dp"
         android:gravity="center_vertical"
         android:orientation="horizontal"
         android:visibility="gone">
 
         <Chronometer
             android:id="@+id/widget_elapsed"
-            android:layout_width="46dp"
+            android:layout_width="38dp"
             android:layout_height="wrap_content"
             android:textColor="#FFFFFFFF"
             android:textSize="11sp" />
@@ -79,7 +79,7 @@
 
         <TextView
             android:id="@+id/widget_duration"
-            android:layout_width="46dp"
+            android:layout_width="38dp"
             android:layout_height="wrap_content"
             android:gravity="end"
             android:text="0:00"
@@ -90,13 +90,13 @@
     <LinearLayout
         android:id="@+id/widget_controls"
         android:layout_width="match_parent"
-        android:layout_height="48dp"
+        android:layout_height="38dp"
         android:gravity="center"
         android:orientation="horizontal">
 
         <ImageButton
             android:id="@+id/widget_shuffle"
-            android:layout_width="44dp"
+            android:layout_width="40dp"
             android:layout_height="match_parent"
             android:background="?android:attr/selectableItemBackgroundBorderless"
             android:contentDescription="Alternar reproducción aleatoria"
@@ -104,7 +104,7 @@
 
         <ImageButton
             android:id="@+id/widget_previous"
-            android:layout_width="48dp"
+            android:layout_width="40dp"
             android:layout_height="match_parent"
             android:background="?android:attr/selectableItemBackgroundBorderless"
             android:contentDescription="Canción anterior"
@@ -113,7 +113,7 @@
 
         <ImageButton
             android:id="@+id/widget_play_pause"
-            android:layout_width="52dp"
+            android:layout_width="44dp"
             android:layout_height="match_parent"
             android:background="?android:attr/selectableItemBackgroundBorderless"
             android:contentDescription="Reproducir o pausar"
@@ -122,7 +122,7 @@
 
         <ImageButton
             android:id="@+id/widget_next"
-            android:layout_width="48dp"
+            android:layout_width="40dp"
             android:layout_height="match_parent"
             android:background="?android:attr/selectableItemBackgroundBorderless"
             android:contentDescription="Siguiente canción"

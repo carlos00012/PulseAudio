@@ -251,12 +251,6 @@ class PulseAudioWidgetProvider : AppWidgetProvider() {
             }
         }
 
-        class PulseAudioWidgetActionReceiver : BroadcastReceiver() {
-            override fun onReceive(context: Context, intent: Intent) {
-                PulseAudioWidgetProvider.dispatchWidgetCommand(context, intent.action)
-            }
-        }
-
         private fun formatTime(milliseconds: Long): String {
             val totalSeconds = milliseconds / 1000
             val seconds = (totalSeconds % 60).toString().padStart(2, '0')
@@ -269,5 +263,11 @@ class PulseAudioWidgetProvider : AppWidgetProvider() {
             }
         }
 
+    }
+}
+
+class PulseAudioWidgetActionReceiver : BroadcastReceiver() {
+    override fun onReceive(context: Context, intent: Intent) {
+        PulseAudioWidgetProvider.dispatchWidgetCommand(context, intent.action)
     }
 }
